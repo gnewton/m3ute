@@ -30,12 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	for i := 0; i < len(tracks); i++ {
-		fmt.Println(tracks[i].TitleEtc)
-		fmt.Println(tracks[i].FileOrUrl)
-	}
-
+	concatenate(tracks)
 }
 
 type Track struct {
@@ -43,33 +38,13 @@ type Track struct {
 	FileOrUrl string
 }
 
-func concatenatePlaylists(fs []string) error {
+func concatenate(tracks []*Track) {
 	fmt.Println("#EXTM3U")
-	//newM3u := new(m3u.M3U)
-	for i := 0; i < len(fs); i++ {
-		if !fileExists(fs[i]) {
-			return errors.New("File:" + fs[i] + " does not exist")
-		}
-
-		file, err := os.Open(fs[i])
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		first := true
-		for scanner.Scan() {
-			line := scanner.Text()
-			if first {
-				first = false
-				continue
-			}
-			fmt.Println(line)
-		}
+	for i := 0; i < len(tracks); i++ {
+		fmt.Println(tracks[i].TitleEtc)
+		fmt.Println(tracks[i].FileOrUrl)
 	}
 
-	return nil
 }
 
 func collectPlaylists(fs []string) ([]*Track, error) {
@@ -88,22 +63,28 @@ func collectPlaylists(fs []string) ([]*Track, error) {
 		defer file.Close()
 
 		scanner := bufio.NewScanner(file)
-		first := true
+		//first := true
 		for scanner.Scan() {
 			line1 := scanner.Text()
-			if first {
-				first = false
-				if !scanner.Scan() {
-					return nil, errors.New("Error reading file: " + fs[i])
+			if line1[0] == '#' {
+				if len(line1) < 8 || line1[0:8] != "#EXTINF:" {
+					continue
 				}
-
-				line1 = scanner.Text()
 			}
+			// if first {
+			// 	first = false
+			// 	if !scanner.Scan() {
+			// 		return nil, errors.New("Error reading file: " + fs[i])
+			// 	}
+
+			// 	line1 = scanner.Text()
+			// }
 			if !scanner.Scan() {
 				return nil, errors.New("Error reading file: " + fs[i])
 			}
 			line2 := scanner.Text()
 			tracks = append(tracks, &Track{TitleEtc: line1, FileOrUrl: line2})
+
 		}
 	}
 	return tracks, nil
